@@ -50,7 +50,8 @@ func (p Player) Getplayer(bearer string) string {
 		panic(err)
 	}
 	defer res.Body.Close()
-	//s := res.StatusCode
+	s := res.StatusCode
+	fmt.Print(s)
 	body, _ := ioutil.ReadAll(res.Body)
 	json.Unmarshal([]byte(body), &p)
 	lastid := p.Data[0].Relationships.Matches.Data[0].ID
