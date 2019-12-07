@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Player object
@@ -20,8 +24,15 @@ type Player struct {
 	} `json:"data"`
 }
 
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 func main() {
-	apikey := "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJiNWU2OTdhMC0yYzhhLTAxMzctMDE5OS0zZDcxYmE4MjMzMWUiLCJpc3MiOiJnYW1lbG9ja2VyIiwiaWF0IjoxNTUzMDA5Nzk4LCJwdWIiOiJibHVlaG9sZSIsInRpdGxlIjoicHViZyIsImFwcCI6Im1leGltb25zdGVyIn0.ngoRxmlYApb_YONkOcAxd9vwiJj4veEwA0ATexLFJp8"
+	apikey := os.Getenv("PUBG_API_KEY")
 	bearer := fmt.Sprintf("Bearer %s", apikey)
 	p := Player{}
 	lastmatchid := p.Getplayer(bearer)
