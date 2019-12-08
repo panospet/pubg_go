@@ -32,17 +32,25 @@ func init() {
 }
 
 func main() {
-	apikey := os.Getenv("PUBG_API_KEY")
-	bearer := fmt.Sprintf("Bearer %s", apikey)
 	p := Player{}
-	lastmatchid := p.Getplayer(bearer)
-	fmt.Print(lastmatchid)
+	lastid := p.GetLastID()
+	fmt.Print(lastid)
 }
 
-// Getplayer func
-func (p Player) Getplayer(bearer string) string {
+// GetLastID fetches the last match id of a specific player
+func (p Player) GetLastID() string {
+	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=meximonster"
+	body := getreq(url)
+	json.Unmarshal([]byte(body), &p)
+	lastid := p.Data[0].Relationships.Matches.Data[0].ID
+	return lastid
+}
+
+func getreq(endpoint string) []uint8 {
+	apikey := os.Getenv("PUBG_API_KEY")
+	bearer := fmt.Sprintf("Bearer %s", apikey)
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", "https://api.pubg.com/shards/steam/players?filter[playerNames]=meximonster", nil)
+	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Set("Authorization", bearer)
 	req.Header.Set("Accept", "application/vnd.api+json")
 	res, err := client.Do(req)
@@ -50,16 +58,28 @@ func (p Player) Getplayer(bearer string) string {
 		panic(err)
 	}
 	defer res.Body.Close()
-	//s := res.StatusCode
 	body, _ := ioutil.ReadAll(res.Body)
-	json.Unmarshal([]byte(body), &p)
-	lastid := p.Data[0].Relationships.Matches.Data[0].ID
-	return lastid
+	if resMessage := statushandler(res.StatusCode); resMessage != "SUCCESS" {
+		fmt.Print(resMessage, "\n")
+		os.Exit(3)
+	}
+	return body
+}
 
-	// ---- IN CASE ALL IDS ARE NEEDED ----
-	//ids := []string{}
-	//for i := range p.Data[0].Relationships.Matches.Data {
-	//	ids = append(ids, p.Data[0].Relationships.Matches.Data[i].ID)
-	//}
-
+// Handles all possible status codes according to official PUBG API documentation
+func statushandler(statuscode int) string {
+	var result string
+	switch s := statuscode; s {
+	case 401:
+		result = "API key invalid or missing."
+	case 404:
+		result = "The specified resource was not found."
+	case 415:
+		result = "Content type incorrect or not specified."
+	case 429:
+		result = "Too many requests."
+	default:
+		result = "SUCCESS"
+	}
+	return result
 }
