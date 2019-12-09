@@ -14,6 +14,7 @@ import (
 // Player object
 type Player struct {
 	Data []struct {
+		ID            string `json:"id"`
 		Relationships struct {
 			Matches struct {
 				Data []struct {
@@ -33,17 +34,18 @@ func init() {
 
 func main() {
 	p := Player{}
-	lastid := p.GetLastID()
-	fmt.Print(lastid)
+	accid, lastid := p.GetLastID()
+	fmt.Printf("Account id: %v\nLast match id: %v", accid, lastid)
 }
 
-// GetLastID fetches the last match id of a specific player
-func (p Player) GetLastID() string {
+// GetLastID fetches the last match id of a specific player along with his account id
+func (p Player) GetLastID() (string, string) {
 	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=meximonster"
 	body := getreq(url)
 	json.Unmarshal([]byte(body), &p)
+	accid := p.Data[0].ID
 	lastid := p.Data[0].Relationships.Matches.Data[0].ID
-	return lastid
+	return accid, lastid
 }
 
 func getreq(endpoint string) []uint8 {
