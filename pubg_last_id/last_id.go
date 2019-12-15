@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -42,8 +43,8 @@ func main() {
 	p := Player{}
 	accid, lastid := p.GetLastID()
 	fmt.Printf("Account id: %v\nLast match id: %v\n", accid, lastid)
-	telemetry := getTelemetry(lastid)
-	fmt.Print(telemetry)
+	telURL := getTelemetry(lastid)
+	fmt.Print(telURL)
 }
 
 // GetLastID fetches the last match id of a specific player along with his account id
@@ -81,6 +82,10 @@ func getreq(endpoint string) []uint8 {
 	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Set("Authorization", bearer)
 	req.Header.Set("Accept", "application/vnd.api+json")
+	// All telemetry URLs end with "json" and are all compressed using gzip
+	if strings.HasSuffix(endpoint, "json") {
+		req.Header.Set("Accept", "Content-Encoding: gzip")
+	}
 	res, err := client.Do(req)
 	if err != nil {
 		panic(err)
