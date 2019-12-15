@@ -30,6 +30,7 @@ type Match struct {
 	Included []interface{}
 }
 
+// Load the PUBG_API_KEY environment variable
 func init() {
 	err := godotenv.Load()
 	if err != nil {
@@ -55,6 +56,7 @@ func (p Player) GetLastID() (string, string) {
 	return accid, lastid
 }
 
+// getTelemetry fetches the telemetry url of a certain match id provided as input
 func getTelemetry(matchid string) string {
 	var m Match
 	var telemetry string
@@ -71,6 +73,7 @@ func getTelemetry(matchid string) string {
 	return telemetry
 }
 
+// getreq makes the get request to an endpoint provided and given no errors, returns the body as slice of bytes
 func getreq(endpoint string) []uint8 {
 	apikey := os.Getenv("PUBG_API_KEY")
 	bearer := fmt.Sprintf("Bearer %s", apikey)
