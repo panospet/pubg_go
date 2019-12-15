@@ -25,6 +25,11 @@ type Player struct {
 	} `json:"data"`
 }
 
+// Match object
+type Match struct {
+	Included []interface{}
+}
+
 func init() {
 	err := godotenv.Load()
 	if err != nil {
@@ -35,7 +40,9 @@ func init() {
 func main() {
 	p := Player{}
 	accid, lastid := p.GetLastID()
-	fmt.Printf("Account id: %v\nLast match id: %v", accid, lastid)
+	fmt.Printf("Account id: %v\nLast match id: %v\n", accid, lastid)
+	telemetry := getTelemetry(lastid)
+	fmt.Print(telemetry)
 }
 
 // GetLastID fetches the last match id of a specific player along with his account id
@@ -46,6 +53,22 @@ func (p Player) GetLastID() (string, string) {
 	accid := p.Data[0].ID
 	lastid := p.Data[0].Relationships.Matches.Data[0].ID
 	return accid, lastid
+}
+
+func getTelemetry(matchid string) string {
+	var m Match
+	var telemetry string
+	url := fmt.Sprintf("https://api.pubg.com/shards/steam/matches/%s", matchid)
+	body := getreq(url)
+	json.Unmarshal([]byte(body), &m)
+	for i := range m.Included {
+		r := m.Included[i].(map[string]interface{})
+		if r["type"] == "asset" {
+			rr := r["attributes"].(map[string]interface{})
+			telemetry = rr["URL"].(string)
+		}
+	}
+	return telemetry
 }
 
 func getreq(endpoint string) []uint8 {
