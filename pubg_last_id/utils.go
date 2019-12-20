@@ -3,11 +3,12 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Player object
@@ -32,22 +33,37 @@ func init() {
 	}
 }
 
-type ResultCollection []interface{}
+// Match object
+type Match struct {
+	Included []IncludedElement `json:"included"`
+}
 
+// IncludedElement is needed for retrieving TelemetryUrl
+type IncludedElement struct {
+	Type       string                 `json:"type"`
+	Attributes map[string]interface{} `json:"attributes"`
+}
+
+// Events object
+type Events []interface{}
+
+// LogPlayerKill event
 type LogPlayerKill struct {
 	KillerName string
 	VictimName string
 }
 
+// keyExists returns true if key exists in map, else false
 func keyExists(decoded map[string]interface{}, key string) bool {
 	val, ok := decoded[key]
 	return ok && val != nil
 }
 
-func GetKillersVictims(telUrl string) []LogPlayerKill {
-	var res ResultCollection
-	getTelUrlResponse := getReq(telUrl, true)
-	err := json.Unmarshal([]byte(getTelUrlResponse), &res)
+// GetKillersVictims fetches the killers and victims of a match
+func GetKillersVictims(telURL string) []LogPlayerKill {
+	var res Events
+	gettelURLResponse := getReq(telURL, true)
+	err := json.Unmarshal([]byte(gettelURLResponse), &res)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +73,8 @@ func GetKillersVictims(telUrl string) []LogPlayerKill {
 		obj := res[i].(map[string]interface{})
 		if obj["_T"] == "LogPlayerKill" {
 			if keyExists(obj, "killer") && keyExists(obj, "victim") {
-				killerName :=  obj["killer"].(map[string]interface{})["name"].(string)
-				victimName :=  obj["victim"].(map[string]interface{})["name"].(string)
+				killerName := obj["killer"].(map[string]interface{})["name"].(string)
+				victimName := obj["victim"].(map[string]interface{})["name"].(string)
 				all = append(all, LogPlayerKill{
 					KillerName: killerName,
 					VictimName: victimName,
@@ -80,19 +96,10 @@ func (p Player) GetLastID() (string, string) {
 	return accid, lastid
 }
 
-type Match struct {
-	Included []IncludedElement `json:"included"`
-}
-
-type IncludedElement struct {
-	Type       string                 `json:"type"`
-	Attributes map[string]interface{} `json:"attributes"`
-}
-
-// getTelemetry fetches the telemetry url of a certain match id provided as input
-func GetTelemetryUrl(matchid string) string {
+// GetTelemetryURL fetches the telemetry url of a certain match id provided as input
+func GetTelemetryURL(matchid string) string {
 	var m Match
-	var telemetryUrl string
+	var telemetryURL string
 	url := fmt.Sprintf("https://api.pubg.com/shards/steam/matches/%s", matchid)
 	body := getReq(url, false)
 	err := json.Unmarshal(body, &m)
@@ -101,10 +108,10 @@ func GetTelemetryUrl(matchid string) string {
 	}
 	for i := range m.Included {
 		if m.Included[i].Type == "asset" {
-			telemetryUrl = m.Included[i].Attributes["URL"].(string)
+			telemetryURL = m.Included[i].Attributes["URL"].(string)
 		}
 	}
-	return telemetryUrl
+	return telemetryURL
 }
 
 // getReq makes the get request to an endpoint provided and given no errors, returns the body as slice of bytes
