@@ -25,14 +25,6 @@ type Player struct {
 	} `json:"data"`
 }
 
-// Load the PUBG_API_KEY environment variable
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
-
 // Match object
 type Match struct {
 	Included []IncludedElement `json:"included"`
@@ -53,37 +45,18 @@ type LogPlayerKill struct {
 	VictimName string
 }
 
+// Load the PUBG_API_KEY environment variable
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 // keyExists returns true if key exists in map, else false
 func keyExists(decoded map[string]interface{}, key string) bool {
 	val, ok := decoded[key]
 	return ok && val != nil
-}
-
-// GetKillersVictims fetches the killers and victims of a match
-func GetKillersVictims(telURL string) []LogPlayerKill {
-	var res Events
-	gettelURLResponse := getReq(telURL, true)
-	err := json.Unmarshal([]byte(gettelURLResponse), &res)
-	if err != nil {
-		panic(err)
-	}
-
-	var all []LogPlayerKill
-	for i := range res {
-		obj := res[i].(map[string]interface{})
-		if obj["_T"] == "LogPlayerKill" {
-			if keyExists(obj, "killer") && keyExists(obj, "victim") {
-				killerName := obj["killer"].(map[string]interface{})["name"].(string)
-				victimName := obj["victim"].(map[string]interface{})["name"].(string)
-				all = append(all, LogPlayerKill{
-					KillerName: killerName,
-					VictimName: victimName,
-				})
-			}
-		}
-	}
-
-	return all
 }
 
 // GetLastID fetches the last match id of a specific player along with his account id
@@ -114,6 +87,33 @@ func GetTelemetryURL(matchid string) string {
 	return telemetryURL
 }
 
+// GetKillersVictims fetches the killers and victims of a match
+func GetKillersVictims(telURL string) []LogPlayerKill {
+	var res Events
+	gettelURLResponse := getReq(telURL, true)
+	err := json.Unmarshal([]byte(gettelURLResponse), &res)
+	if err != nil {
+		panic(err)
+	}
+
+	var all []LogPlayerKill
+	for i := range res {
+		obj := res[i].(map[string]interface{})
+		if obj["_T"] == "LogPlayerKill" {
+			if keyExists(obj, "killer") && keyExists(obj, "victim") {
+				killerName := obj["killer"].(map[string]interface{})["name"].(string)
+				victimName := obj["victim"].(map[string]interface{})["name"].(string)
+				all = append(all, LogPlayerKill{
+					KillerName: killerName,
+					VictimName: victimName,
+				})
+			}
+		}
+	}
+
+	return all
+}
+
 // getReq makes the get request to an endpoint provided and given no errors, returns the body as slice of bytes
 func getReq(endpoint string, useGzipHeader bool) []uint8 {
 	apikey := os.Getenv("PUBG_API_KEY")
@@ -122,7 +122,7 @@ func getReq(endpoint string, useGzipHeader bool) []uint8 {
 	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Set("Authorization", bearer)
 	req.Header.Set("Accept", "application/vnd.api+json")
-	// All telemetry URLs end with "json" and are all compressed using gzip
+	// All telemetry URLs are all compressed using gzip
 	if useGzipHeader {
 		req.Header.Set("Accept", "Content-Encoding: gzip")
 	}
