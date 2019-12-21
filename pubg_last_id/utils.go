@@ -61,9 +61,12 @@ func keyExists(decoded map[string]interface{}, key string) bool {
 
 // GetLastID fetches the last match id of a specific player along with his account id
 func (p Player) GetLastID() (string, string) {
-	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=meximonster"
+	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=" + os.Args[1]
 	body := getReq(url, false)
-	json.Unmarshal([]byte(body), &p)
+	err := json.Unmarshal([]byte(body), &p)
+	if err != nil {
+		panic(err)
+	}
 	accid := p.Data[0].ID
 	lastid := p.Data[0].Relationships.Matches.Data[0].ID
 	return accid, lastid
@@ -73,7 +76,7 @@ func (p Player) GetLastID() (string, string) {
 func GetTelemetryURL(matchid string) string {
 	var m Match
 	var telemetryURL string
-	url := fmt.Sprintf("https://api.pubg.com/shards/steam/matches/%s", matchid)
+	url := "https://api.pubg.com/shards/steam/matches/" + matchid
 	body := getReq(url, false)
 	err := json.Unmarshal(body, &m)
 	if err != nil {
@@ -132,27 +135,13 @@ func getReq(endpoint string, useGzipHeader bool) []uint8 {
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	if resMessage := statusHandler(res.StatusCode); resMessage != "SUCCESS" {
-		fmt.Print(resMessage, "\n")
-		os.Exit(3)
-	}
+	statusHandler(endpoint, res.StatusCode)
 	return body
 }
 
-// Handles all possible status codes according to official PUBG API documentation
-func statusHandler(statuscode int) string {
-	var result string
-	switch s := statuscode; s {
-	case 401:
-		result = "API key invalid or missing."
-	case 404:
-		result = "The specified resource was not found."
-	case 415:
-		result = "Content type incorrect or not specified."
-	case 429:
-		result = "Too many requests."
-	default:
-		result = "SUCCESS"
+// Check if get request fails
+func statusHandler(endpoint string, statuscode int) {
+	if statuscode != 200 {
+		log.Fatalf("Get request to %v failed with status code %v", endpoint, statuscode)
 	}
-	return result
 }
