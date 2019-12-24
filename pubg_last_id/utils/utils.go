@@ -1,43 +1,16 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/valyala/fastjson"
 )
-
-// Player object
-type Player struct {
-	Data []struct {
-		ID            string `json:"id"`
-		Relationships struct {
-			Matches struct {
-				Data []struct {
-					ID string `json:"id"`
-				} `json:"data"`
-			} `json:"matches"`
-		} `json:"relationships"`
-	} `json:"data"`
-}
-
-// Match object
-type Match struct {
-	Included []IncludedElement `json:"included"`
-}
-
-// IncludedElement is needed for retrieving TelemetryUrl
-type IncludedElement struct {
-	Type       string                 `json:"type"`
-	Attributes map[string]interface{} `json:"attributes"`
-}
-
-// Events object
-type Events []interface{}
 
 // LogPlayerKill event
 type LogPlayerKill struct {
@@ -53,67 +26,66 @@ func init() {
 	}
 }
 
-// keyExists returns true if key exists in map, else false
-func keyExists(decoded map[string]interface{}, key string) bool {
-	val, ok := decoded[key]
-	return ok && val != nil
-}
-
 // GetLastID fetches the last match id of a specific player along with his account id
-func (p Player) GetLastID() (string, string) {
-	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=" + os.Args[1]
+func GetLastID(playerName string) (string, string) {
+	start := time.Now()
+	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=" + playerName
 	body := getReq(url, false)
-	err := json.Unmarshal([]byte(body), &p)
-	if err != nil {
-		panic(err)
-	}
-	accid := p.Data[0].ID
-	lastid := p.Data[0].Relationships.Matches.Data[0].ID
+	accid := fastjson.GetString([]byte(body), "data", "0", "id")
+	lastid := fastjson.GetString([]byte(body), "data", "0", "relationships", "matches", "data", "0", "id")
+	t := time.Now()
+	elapsed := t.Sub(start)
+	fmt.Printf("GetLastID took %v\n", elapsed)
 	return accid, lastid
 }
 
 // GetTelemetryURL fetches the telemetry url of a certain match id provided as input
 func GetTelemetryURL(matchid string) string {
-	var m Match
+	start := time.Now()
 	var telemetryURL string
 	url := "https://api.pubg.com/shards/steam/matches/" + matchid
 	body := getReq(url, false)
-	err := json.Unmarshal(body, &m)
+	var p fastjson.Parser
+	v, err := p.ParseBytes([]byte(body))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	for i := range m.Included {
-		if m.Included[i].Type == "asset" {
-			telemetryURL = m.Included[i].Attributes["URL"].(string)
+	vv := v.GetArray("included")
+	for i := range vv {
+		if vv[i].Exists("attributes", "URL") {
+			telemetryURL = string(vv[i].GetStringBytes("attributes", "URL"))
 		}
 	}
+	t := time.Now()
+	elapsed := t.Sub(start)
+	fmt.Printf("GetTelemetryURL took %v\n", elapsed)
 	return telemetryURL
 }
 
 // GetKillersVictims fetches the killers and victims of a match
 func GetKillersVictims(telURL string) []LogPlayerKill {
-	var res Events
+	start := time.Now()
 	gettelURLResponse := getReq(telURL, true)
-	err := json.Unmarshal([]byte(gettelURLResponse), &res)
-	if err != nil {
-		panic(err)
-	}
-
 	var all []LogPlayerKill
-	for i := range res {
-		obj := res[i].(map[string]interface{})
-		if obj["_T"] == "LogPlayerKill" {
-			if keyExists(obj, "killer") && keyExists(obj, "victim") {
-				killerName := obj["killer"].(map[string]interface{})["name"].(string)
-				victimName := obj["victim"].(map[string]interface{})["name"].(string)
+	var p fastjson.Parser
+	v, err := p.ParseBytes([]byte(gettelURLResponse))
+	if err != nil {
+		log.Fatal(err)
+	}
+	vv := v.GetArray()
+	for i := range vv {
+		if string(vv[i].GetStringBytes("_T")) == "LogPlayerKill" {
+			if vv[i].Exists("killer") && vv[i].Exists("victim") {
 				all = append(all, LogPlayerKill{
-					KillerName: killerName,
-					VictimName: victimName,
+					KillerName: string(vv[i].GetStringBytes("killer", "name")),
+					VictimName: string(vv[i].GetStringBytes("victim", "name")),
 				})
 			}
 		}
 	}
-
+	t := time.Now()
+	elapsed := t.Sub(start)
+	fmt.Printf("GetKillersVictims took %v\n", elapsed)
 	return all
 }
 
@@ -125,7 +97,7 @@ func getReq(endpoint string, useGzipHeader bool) []uint8 {
 	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Set("Authorization", bearer)
 	req.Header.Set("Accept", "application/vnd.api+json")
-	// All telemetry URLs are all compressed using gzip
+	// All telemetry URLs are compressed using gzip
 	if useGzipHeader {
 		req.Header.Set("Accept", "Content-Encoding: gzip")
 	}

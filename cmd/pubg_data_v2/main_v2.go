@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 
-	utils "github.com/pubg_go/pubg_last_id/utils"
+	utils "github.com/pubg_go/pubg_last_id/utils_v2"
 )
 
 func main() {
 	start := time.Now()
-	_, lastid := utils.GetLastID(os.Args[1])
+	p := utils.Player{}
+	_, lastid := p.GetLastID()
 	//fmt.Printf("Account id: %v\nLast match id: %v\n", accid, lastid)
 	telURL := utils.GetTelemetryURL(lastid)
 	all := utils.GetKillersVictims(telURL)
