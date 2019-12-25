@@ -11,15 +11,10 @@ import (
 func main() {
 	start := time.Now()
 	playerName := os.Args[1]
-	_, lastid := utils.GetLastID(playerName)
-	//fmt.Printf("Account id: %v\nLast match id: %v\n", accid, lastid)
+	lastid := utils.GetLastID(playerName)
 	telURL := utils.GetTelemetryURL(lastid)
-	all := utils.GetKillersVictims(telURL)
-	for i := range all {
-		if all[i].KillerName == playerName || all[i].VictimName == playerName {
-			fmt.Println(all[i])
-		}
-	}
+	v, k := utils.GetKillersVictims(playerName, telURL)
+	utils.PrintResults(v, k)
 	t := time.Now()
 	elapsed := t.Sub(start)
 	fmt.Printf("Execution took %v\n", elapsed)
