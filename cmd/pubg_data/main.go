@@ -10,12 +10,13 @@ import (
 
 func main() {
 	start := time.Now()
-	_, lastid := utils.GetLastID(os.Args[1])
+	playerName := os.Args[1]
+	_, lastid := utils.GetLastID(playerName)
 	//fmt.Printf("Account id: %v\nLast match id: %v\n", accid, lastid)
 	telURL := utils.GetTelemetryURL(lastid)
 	all := utils.GetKillersVictims(telURL)
 	for i := range all {
-		if all[i].KillerName == "meximonster" || all[i].VictimName == "meximonster" {
+		if all[i].KillerName == playerName || all[i].VictimName == playerName {
 			fmt.Println(all[i])
 		}
 	}
