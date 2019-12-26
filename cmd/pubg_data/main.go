@@ -11,19 +11,8 @@ import (
 func main() {
 	start := time.Now()
 	playerName := os.Args[1]
-	wrap(playerName)
-	// lastid := utils.GetLastID(playerName)
-	// telURL := utils.GetTelemetryURL(lastid)
-	// v, k := utils.GetKillersVictims(playerName, telURL)
-	// utils.PrintResults(v, k)
+	utils.Wrap(playerName)
 	t := time.Now()
 	elapsed := t.Sub(start)
 	fmt.Printf("Execution took %v\n", elapsed)
-}
-
-func wrap(playerName string) {
-	lastid := utils.GetLastID(playerName)
-	telURL := utils.GetTelemetryURL(lastid)
-	v, k := utils.GetKillersVictims(playerName, telURL)
-	utils.PrintResults(v, k)
 }
