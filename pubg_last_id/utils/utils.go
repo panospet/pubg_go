@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/valyala/fastjson"
@@ -22,19 +21,19 @@ func init() {
 
 // GetLastID fetches the last match id of a specific player along with his account id
 func GetLastID(playerName string) string {
-	start := time.Now()
+	//start := time.Now()
 	url := "https://api.pubg.com/shards/steam/players?filter[playerNames]=" + playerName
 	body := getReq(url, true, false)
 	lastid := fastjson.GetString([]byte(body), "data", "0", "relationships", "matches", "data", "0", "id")
-	t := time.Now()
-	elapsed := t.Sub(start)
-	fmt.Printf("GetLastID took %v\n", elapsed)
+	// t := time.Now()
+	// elapsed := t.Sub(start)
+	// fmt.Printf("GetLastID took %v\n", elapsed)
 	return lastid
 }
 
 // GetTelemetryURL fetches the telemetry url of a certain match id provided as input
 func GetTelemetryURL(matchid string) string {
-	start := time.Now()
+	//start := time.Now()
 	var telemetryURL string
 	url := "https://api.pubg.com/shards/steam/matches/" + matchid
 	body := getReq(url, false, false)
@@ -50,15 +49,15 @@ func GetTelemetryURL(matchid string) string {
 			break
 		}
 	}
-	t := time.Now()
-	elapsed := t.Sub(start)
-	fmt.Printf("GetTelemetryURL took %v\n", elapsed)
+	// t := time.Now()
+	// elapsed := t.Sub(start)
+	// fmt.Printf("GetTelemetryURL took %v\n", elapsed)
 	return telemetryURL
 }
 
 // GetKillersVictims fetches the killers and victims of a match
 func GetKillersVictims(playerName string, telURL string) ([]string, string) {
-	start := time.Now()
+	// start := time.Now()
 	gettelURLResponse := getReq(telURL, true, true)
 	victims := []string{}
 	var killer string
@@ -79,15 +78,15 @@ func GetKillersVictims(playerName string, telURL string) ([]string, string) {
 			}
 		}
 	}
-	t := time.Now()
-	elapsed := t.Sub(start)
-	fmt.Printf("GetKillersVictims took %v\n", elapsed)
+	// t := time.Now()
+	// elapsed := t.Sub(start)
+	// fmt.Printf("GetKillersVictims took %v\n", elapsed)
 	return victims, killer
 }
 
 // getReq makes the get request to an endpoint provided and given no errors, returns the body as slice of bytes
 func getReq(endpoint string, needAuth bool, useGzipHeader bool) []uint8 {
-	start := time.Now()
+	// start := time.Now()
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", endpoint, nil)
 	req.Header.Set("Accept", "application/vnd.api+json")
@@ -106,9 +105,9 @@ func getReq(endpoint string, needAuth bool, useGzipHeader bool) []uint8 {
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	statusHandler(endpoint, res.StatusCode)
-	t := time.Now()
-	elapsed := t.Sub(start)
-	fmt.Printf("getReq of %v took %v\n", endpoint, elapsed)
+	// t := time.Now()
+	// elapsed := t.Sub(start)
+	// fmt.Printf("getReq of %v took %v\n", endpoint, elapsed)
 	return body
 }
 
@@ -121,8 +120,8 @@ func statusHandler(endpoint string, statuscode int) {
 
 // PrintResults manages the output
 func PrintResults(v []string, k string) {
+	fmt.Print("Victims : ")
 	if len(v) != 0 {
-		fmt.Print("Victims : ")
 		for i := range v {
 			fmt.Print(v[i], ", ")
 		}
@@ -135,4 +134,12 @@ func PrintResults(v []string, k string) {
 	} else {
 		fmt.Println("You either survived or deathtype not by player.")
 	}
+}
+
+// Wrap sums all the above
+func Wrap(playerName string) {
+	lastid := GetLastID(playerName)
+	telURL := GetTelemetryURL(lastid)
+	v, k := GetKillersVictims(playerName, telURL)
+	PrintResults(v, k)
 }
