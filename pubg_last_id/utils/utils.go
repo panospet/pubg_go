@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/valyala/fastjson"
@@ -123,7 +124,8 @@ func Handleresults(v []string, k string, vkc chan string) {
 }
 
 // Wrapchan sums all the above
-func Wrapchan(playerName, lastid string, vkc chan string) {
+func Wrapchan(playerName, lastid string, vkc chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	telURL := GetTelemetryURL(lastid)
 	v, k := GetKillersVictims(playerName, telURL)
 	Handleresults(v, k, vkc)
