@@ -6,13 +6,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/valyala/fastjson"
 )
 
-// Load the PUBG_API_KEY environment variable
+// Load environment variables
 func init() {
 	err := godotenv.Load()
 	if err != nil {
@@ -30,8 +31,30 @@ func GetMatchIDs(playerName string, c chan string) {
 		log.Fatal(err)
 	}
 	vv := v.GetArray("data", "0", "relationships", "matches", "data")
-	for i := 0; i < 10; i++ {
-		c <- string(vv[i].GetStringBytes("id"))
+	idkey := "LAST_ID_" + playerName
+	lastid := os.Getenv(idkey)
+	tobelastid := string(vv[0].GetStringBytes("id"))
+	if lastid == tobelastid {
+		fmt.Println("All matches have been processed. Exiting..")
+		os.Exit(3)
+	}
+	if lastid != "" {
+		for i := range vv {
+			id := string(vv[i].GetStringBytes("id"))
+			if id != lastid {
+				fmt.Println("Processing match with id: ", id)
+				c <- id
+			} else {
+				replace(playerName, tobelastid)
+				break
+			}
+		}
+	} else {
+		fmt.Println("No history found, processing 10 last matches")
+		for i := 0; i < 10; i++ {
+			c <- string(vv[i].GetStringBytes("id"))
+		}
+		write(playerName, tobelastid)
 	}
 	close(c)
 }
@@ -123,10 +146,47 @@ func Handleresults(v []string, k string, vkc chan string) {
 	}
 }
 
-// Wrapchan sums all the above
+// Wrapchan sums up all the above
 func Wrapchan(playerName, lastid string, vkc chan string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	telURL := GetTelemetryURL(lastid)
 	v, k := GetKillersVictims(playerName, telURL)
 	Handleresults(v, k, vkc)
+}
+
+// replace function updates the .env file with the last match id processed
+func replace(playerName string, tobelastid string) {
+	input, err := ioutil.ReadFile(".env")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(line, playerName) {
+			v := fmt.Sprintf("LAST_ID_%s=%s", playerName, tobelastid)
+			lines[i] = v
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(".env", []byte(output), 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+// write function appends to the .env file with the last match id processed for the new player
+func write(playerName string, tobelastid string) {
+	f, err := os.OpenFile(".env", os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	v := fmt.Sprintf("LAST_ID_%s=%s", playerName, tobelastid)
+	defer f.Close()
+
+	if _, err = f.WriteString(v); err != nil {
+		panic(err)
+	}
 }
