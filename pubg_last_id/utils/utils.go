@@ -183,7 +183,7 @@ func write(playerName string, tobelastid string) {
 		panic(err)
 	}
 
-	v := fmt.Sprintf("LAST_ID_%s=%s", playerName, tobelastid)
+	v := fmt.Sprintf("LAST_ID_%s=%s\n", playerName, tobelastid)
 	defer f.Close()
 
 	if _, err = f.WriteString(v); err != nil {
