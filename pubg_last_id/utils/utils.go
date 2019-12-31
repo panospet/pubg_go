@@ -38,13 +38,15 @@ func GetMatchIDs(playerName string, c chan string) {
 		fmt.Println("All matches have been processed. Exiting..")
 		os.Exit(3)
 	}
+	cc := 0
 	if lastid != "" {
 		for i := range vv {
 			id := string(vv[i].GetStringBytes("id"))
 			if id != lastid {
-				fmt.Println("Processing match with id: ", id)
+				cc++
 				c <- id
 			} else {
+				fmt.Printf("Found %v new matches, processing..\n", cc)
 				replace(playerName, tobelastid)
 				break
 			}
