@@ -13,7 +13,7 @@ func main() {
 	start := time.Now()
 	wg := &sync.WaitGroup{}
 	c := make(chan string)
-	vkc := make(chan string)
+	vkc := make(chan utils.Player)
 	playerName := os.Args[1]
 	go utils.GetMatchIDs(playerName, c)
 	for v := range c {

@@ -13,6 +13,12 @@ import (
 	"github.com/valyala/fastjson"
 )
 
+// Player object
+type Player struct {
+	name string
+	role string // killer or victim
+}
+
 // Load environment variables
 func init() {
 	err := godotenv.Load()
@@ -137,19 +143,21 @@ func statusHandler(endpoint string, statuscode int) {
 }
 
 // Handleresults manages the output
-func Handleresults(v []string, k string, vkc chan string) {
+func Handleresults(v []string, k string, vkc chan Player) {
 	if len(v) != 0 {
 		for i := range v {
-			vkc <- v[i] + ".victim"
+			p := Player{v[i], "victim"}
+			vkc <- p
 		}
 	}
 	if k != "" {
-		vkc <- k + ".killer"
+		p := Player{k, "victim"}
+		vkc <- p
 	}
 }
 
 // Wrapchan sums up all the above
-func Wrapchan(playerName, lastid string, vkc chan string, wg *sync.WaitGroup) {
+func Wrapchan(playerName, lastid string, vkc chan Player, wg *sync.WaitGroup) {
 	defer wg.Done()
 	telURL := GetTelemetryURL(lastid)
 	v, k := GetKillersVictims(playerName, telURL)
