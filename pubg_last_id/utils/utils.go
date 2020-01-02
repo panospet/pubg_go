@@ -151,7 +151,7 @@ func Handleresults(v []string, k string, vkc chan Player) {
 		}
 	}
 	if k != "" {
-		p := Player{k, "victim"}
+		p := Player{k, "killer"}
 		vkc <- p
 	}
 }
