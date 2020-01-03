@@ -20,10 +20,7 @@ func main() {
 		wg.Add(1)
 		go utils.Wrapchan(playerName, v, vkc, wg)
 	}
-	go func() {
-		wg.Wait()
-		close(vkc)
-	}()
+	go utils.Wait(wg, vkc)
 	for i := range vkc {
 		fmt.Println(i)
 	}

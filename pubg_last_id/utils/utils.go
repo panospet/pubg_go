@@ -164,6 +164,12 @@ func Wrapchan(playerName, lastid string, vkc chan Player, wg *sync.WaitGroup) {
 	Handleresults(v, k, vkc)
 }
 
+// Wait will eventually close the vkc channel
+func Wait(wg *sync.WaitGroup, vkc chan Player) {
+	wg.Wait()
+	close(vkc)
+}
+
 // replace function updates the .env file with the last match id processed
 func replace(playerName string, tobelastid string) {
 	input, err := ioutil.ReadFile(".env")
