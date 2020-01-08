@@ -144,14 +144,16 @@ func statusHandler(endpoint string, statuscode int) {
 
 // Handleresults manages the output
 func Handleresults(v []string, k string, vkc chan Player) {
+	c1 := "victim"
+	c2 := "killer"
 	if len(v) != 0 {
 		for i := range v {
-			p := Player{v[i], "victim"}
+			p := Player{v[i], c1}
 			vkc <- p
 		}
 	}
 	if k != "" {
-		p := Player{k, "killer"}
+		p := Player{k, c2}
 		vkc <- p
 	}
 }
