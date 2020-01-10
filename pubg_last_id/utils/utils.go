@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -207,4 +208,56 @@ func write(playerName string, tobelastid string) {
 	if _, err = f.WriteString(v); err != nil {
 		panic(err)
 	}
+}
+
+// GetAccid fetches the accid of the players to be compared
+func GetAccid(playerName string) string {
+	endpoint := "https://api.pubg.com/shards/steam/players?filter[playerNames]=" + playerName
+	body := getReq(endpoint, true, false)
+	var p fastjson.Parser
+	v, err := p.ParseBytes([]byte(body))
+	if err != nil {
+		log.Fatal(err)
+	}
+	accid := string(v.GetStringBytes("data", "0", "id"))
+	if accid == "" {
+		log.Fatal("Player name does not exist")
+	}
+	return accid
+}
+
+// GetSeasonStats fetches all needed statistics
+func GetSeasonStats(accid1 string, accid2 string) (PlayerSeasonStats, PlayerSeasonStats) {
+	endpoint := "https://api.pubg.com/shards/steam/seasons/division.bro.official.pc-2018-05/gameMode/squad-fpp/players?filter[playerIds]=" + accid1 + "%2C" + accid2
+	body := getReq(endpoint, true, false)
+	var p fastjson.Parser
+	v, err := p.ParseBytes([]byte(body))
+	if err != nil {
+		log.Fatal(err)
+	}
+	var s1, s2 PlayerSeasonStats
+	v1 := v.Get("data", "0", "attributes", "gameModeStats", "squad-fpp").MarshalTo(nil)
+	v2 := v.Get("data", "1", "attributes", "gameModeStats", "squad-fpp").MarshalTo(nil)
+	json.Unmarshal(v1, &s1)
+	json.Unmarshal(v2, &s2)
+	return s1, s2
+}
+
+// PlayerSeasonStats object
+type PlayerSeasonStats struct {
+	Wins           int     `json:"wins"`
+	Losses         int     `json:"losses"`
+	Top10S         int     `json:"top10s"`
+	Kills          int     `json:"kills"`
+	DamageDealt    float64 `json:"damageDealt"`
+	Assists        int     `json:"assists"`
+	DBNOs          int     `json:"dBNOs"`
+	HeadshotKills  int     `json:"headshotKills"`
+	LongestKill    float64 `json:"longestKill"`
+	MaxKillStreaks int     `json:"maxKillStreaks"`
+	Revives        int     `json:"revives"`
+	RoundMostKills int     `json:"roundMostKills"`
+	RoundsPlayed   int     `json:"roundsPlayed"`
+	Suicides       int     `json:"suicides"`
+	TeamKills      int     `json:"teamKills"`
 }
