@@ -13,6 +13,7 @@ func main() {
 	acc1 := utils.GetAccid(player1)
 	acc2 := utils.GetAccid(player2)
 	stats1, stats2 := utils.GetSeasonStats(acc1, acc2)
+	fmt.Printf("MatchesPlayed: %v %v\n", stats1.RoundsPlayed, stats2.RoundsPlayed)
 	fmt.Printf("Wins: %v %v\n", stats1.Wins, stats2.Wins)
 	fmt.Printf("Losses: %v %v\n", stats1.Losses, stats2.Losses)
 	fmt.Printf("Top10S: %v %v\n", stats1.Top10S, stats2.Top10S)
@@ -25,7 +26,6 @@ func main() {
 	fmt.Printf("MaxKillStreaks: %v %v\n", stats1.MaxKillStreaks, stats2.MaxKillStreaks)
 	fmt.Printf("Revives: %v %v\n", stats1.Revives, stats2.Revives)
 	fmt.Printf("RoundMostKills: %v %v\n", stats1.RoundMostKills, stats2.RoundMostKills)
-	fmt.Printf("RoundsPlayed: %v %v\n", stats1.RoundsPlayed, stats2.RoundsPlayed)
 	fmt.Printf("Suicides: %v %v\n", stats1.Suicides, stats2.Suicides)
 	fmt.Printf("TeamKills: %v %v\n", stats1.TeamKills, stats2.TeamKills)
 }

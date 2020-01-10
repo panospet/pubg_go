@@ -245,6 +245,7 @@ func GetSeasonStats(accid1 string, accid2 string) (PlayerSeasonStats, PlayerSeas
 
 // PlayerSeasonStats object
 type PlayerSeasonStats struct {
+	RoundsPlayed   int     `json:"roundsPlayed"`
 	Wins           int     `json:"wins"`
 	Losses         int     `json:"losses"`
 	Top10S         int     `json:"top10s"`
@@ -257,7 +258,6 @@ type PlayerSeasonStats struct {
 	MaxKillStreaks int     `json:"maxKillStreaks"`
 	Revives        int     `json:"revives"`
 	RoundMostKills int     `json:"roundMostKills"`
-	RoundsPlayed   int     `json:"roundsPlayed"`
 	Suicides       int     `json:"suicides"`
 	TeamKills      int     `json:"teamKills"`
 }
