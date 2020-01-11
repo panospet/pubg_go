@@ -59,7 +59,7 @@ func GetMatchIDs(playerName string, c chan string) {
 			}
 		}
 	} else {
-		fmt.Println("No history found, processing 10 last matches")
+		fmt.Println("No history found, processing last 10 matches")
 		for i := 0; i < 10; i++ {
 			c <- string(vv[i].GetStringBytes("id"))
 		}
@@ -220,9 +220,6 @@ func GetAccid(playerName string) string {
 		log.Fatal(err)
 	}
 	accid := string(v.GetStringBytes("data", "0", "id"))
-	if accid == "" {
-		log.Fatal("Player name does not exist")
-	}
 	return accid
 }
 
